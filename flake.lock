@@ -37,7 +37,8 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "wf-nvim": "wf-nvim"
       }
     },
     "systems": {
@@ -52,6 +53,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "wf-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1701266157,
+        "narHash": "sha256-Avl0Xwd+HOAGCPTZZg/DnzcJVX3FgN0N2LCYzSPOy7k=",
+        "owner": "Cassin01",
+        "repo": "wf.nvim",
+        "rev": "f645ba2ec4cbb7ce9c9747fe500f0084a20fc360",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Cassin01",
+        "repo": "wf.nvim",
         "type": "github"
       }
     }

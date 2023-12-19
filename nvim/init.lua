@@ -3,9 +3,8 @@ local fn = vim.fn
 local opt = vim.o
 local g = vim.g
 
--- <leader> key. Defaults to `\`. Some people prefer space.
--- g.mapleader = ' '
--- g.maplocalleader = ' '
+g.mapleader = ' '
+g.maplocalleader = ' '
 
 cmd.syntax('on')
 cmd.syntax('enable')
@@ -16,8 +15,6 @@ if fn.has('termguicolors') then
   opt.termguicolors = true
 end
 
--- See :h <option> to see what the options do
-
 -- Search down into subfolders
 opt.path = vim.o.path .. '**'
 
@@ -25,7 +22,7 @@ opt.number = true
 opt.relativenumber = true
 opt.cursorline = true
 opt.lazyredraw = true
-opt.showmatch = true -- Highlight matching parentheses, etc
+opt.showmatch = true
 opt.incsearch = true
 opt.hlsearch = true
 
@@ -47,7 +44,6 @@ opt.cmdheight = 0
 opt.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
 -- Configure Neovim diagnostic messages
-
 local function prefix_diagnostic(prefix, diagnostic)
   return string.format(prefix .. ' %s', diagnostic.message)
 end
