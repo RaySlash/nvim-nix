@@ -2,3 +2,7 @@
 -- even with default configs
 
 require('nvim-surround').setup()
+
+-- Colorscheme
+vim.o.background = "dark"
+vim.cmd.colorscheme = "gruvbox"

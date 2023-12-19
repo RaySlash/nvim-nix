@@ -10,7 +10,7 @@ cmd.syntax('on')
 cmd.syntax('enable')
 opt.compatible = false
 
--- Enable true colour support
+-- Colorscheme and enable true colour support
 if fn.has('termguicolors') then
   opt.termguicolors = true
 end
