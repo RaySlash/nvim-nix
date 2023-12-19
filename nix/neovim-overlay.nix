@@ -45,6 +45,7 @@ with final.pkgs.lib; let
     plenary-nvim
     nvim-web-devicons
     vim-repeat
+    gruvbox-nvim
     (mkNvimPlugin inputs.wf-nvim "wf.nvim")
   ];
 

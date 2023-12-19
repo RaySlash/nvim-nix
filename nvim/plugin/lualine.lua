@@ -35,7 +35,7 @@ require('lualine').setup {
     },
   },
   options = {
-    theme = 'auto',
+    theme = 'gruvbox_dark',
   },
   -- Example top tabline configuration (this may clash with other plugins)
   -- tabline = {

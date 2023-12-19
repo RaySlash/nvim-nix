@@ -3,6 +3,102 @@ local fn = vim.fn
 local keymap = vim.keymap
 local diagnostic = vim.diagnostic
 
+-- [[ Basic Keymaps ]]
+
+keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
+
+-- Remap for dealing with word wrap
+keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
+keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+-- Diagnostic keymaps
+keymap.set('n', '[d', diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
+keymap.set('n', ']d', diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
+keymap.set('n', '<leader>e', diagnostic.open_float, { desc = 'Open floating diagnostic message' })
+keymap.set('n', '<leader>q', diagnostic.setloclist, { desc = 'Open diagnostics list' })
+
+-- [[ Highlight on yank ]]
+local highlight_group = api.nvim_create_augroup('YankHighlight', { clear = true })
+api.nvim_create_autocmd('TextYankPost', {
+  callback = function()
+    vim.highlight.on_yank()
+  end,
+  group = highlight_group,
+  pattern = '*',
+})
+
+-- [[ Configure Telescope ]]
+require('telescope').setup {
+  defaults = {
+    mappings = {
+      i = {
+        ['<C-u>'] = false,
+        ['<C-d>'] = false,
+      },
+    },
+  },
+}
+
+-- Enable telescope fzf native, if installed
+pcall(require('telescope').load_extension, 'fzf')
+
+-- Telescope live_grep in git root
+local function find_git_root()
+  local current_file = api.nvim_buf_get_name(0)
+  local current_dir
+  local cwd = fn.getcwd()
+  if current_file == '' then
+    current_dir = cwd
+  else
+    current_dir = fn.fnamemodify(current_file, ':h')
+  end
+
+  local git_root = fn.systemlist('git -C ' .. fn.escape(current_dir, ' ') .. ' rev-parse --show-toplevel')[1]
+  if vim.v.shell_error ~= 0 then
+    print 'Not a git repository. Searching on current working directory'
+    return cwd
+  end
+  return git_root
+end
+
+-- Custom live_grep function to search in git root
+local function live_grep_git_root()
+  local git_root = find_git_root()
+  if git_root then
+    require('telescope.builtin').live_grep {
+      search_dirs = { git_root },
+    }
+  end
+end
+
+api.nvim_create_user_command('LiveGrepGitRoot', live_grep_git_root, {})
+
+keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
+keymap.set('n', '<leader><space>', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
+keymap.set('n', '<leader>/', function()
+  require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+    winblend = 10,
+    previewer = false,
+  })
+end, { desc = '[/] Fuzzily search in current buffer' })
+
+local function telescope_live_grep_open_files()
+  require('telescope.builtin').live_grep {
+    grep_open_files = true,
+    prompt_title = 'Live Grep in Open Files',
+  }
+end
+keymap.set('n', '<leader>s/', telescope_live_grep_open_files, { desc = '[S]earch [/] in Open Files' })
+keymap.set('n', '<leader>ss', require('telescope.builtin').builtin, { desc = '[S]earch [S]elect Telescope' })
+keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
+keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
+keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
+keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
+keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
+keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' })
+keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
+keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
+
 -- Yank from current position till end of current line
 keymap.set('n', 'Y', 'y$', { silent = true, desc = 'yank to end of line' })
 
@@ -24,7 +120,7 @@ local function toggle_qf_list()
     vim.cmd.cclose()
     return
   end
-  if not vim.tbl_isempty(vim.fn.getqflist()) then
+  if not vim.tbl_isempty(fn.getqflist()) then
     vim.cmd.copen()
   end
 end
@@ -126,70 +222,7 @@ end, { expr = true, desc = "expand to current buffer's directory" })
 keymap.set('n', '<leader>tn', vim.cmd.tabnew, { desc = 'new tab' })
 keymap.set('n', '<leader>tq', vim.cmd.tabclose, { desc = 'close tab' })
 
-local severity = diagnostic.severity
-
-keymap.set('n', '<leader>e', function()
-  local _, winid = diagnostic.open_float(nil, { scope = 'line' })
-  if not winid then
-    vim.notify('no diagnostics found', vim.log.levels.INFO)
-    return
-  end
-  vim.api.nvim_win_set_config(winid or 0, { focusable = true })
-end, { noremap = true, silent = true, desc = 'diagnostics floating window' })
-keymap.set('n', '[d', diagnostic.goto_prev, { noremap = true, silent = true, desc = 'previous diagnostic' })
-keymap.set('n', ']d', diagnostic.goto_next, { noremap = true, silent = true, desc = 'next diagnostic' })
-keymap.set('n', '[e', function()
-  diagnostic.goto_prev {
-    severity = severity.ERROR,
-  }
-end, { noremap = true, silent = true, desc = 'previous error diagnostic' })
-keymap.set('n', ']e', function()
-  diagnostic.goto_next {
-    severity = severity.ERROR,
-  }
-end, { noremap = true, silent = true, desc = 'next error diagnostic' })
-keymap.set('n', '[w', function()
-  diagnostic.goto_prev {
-    severity = severity.WARN,
-  }
-end, { noremap = true, silent = true, desc = 'previous warning diagnostic' })
-keymap.set('n', ']w', function()
-  diagnostic.goto_next {
-    severity = severity.WARN,
-  }
-end, { noremap = true, silent = true, desc = 'next warning diagnostic' })
-keymap.set('n', '[h', function()
-  diagnostic.goto_prev {
-    severity = severity.HINT,
-  }
-end, { noremap = true, silent = true, desc = 'previous hint diagnostic' })
-keymap.set('n', ']h', function()
-  diagnostic.goto_next {
-    severity = severity.HINT,
-  }
-end, { noremap = true, silent = true, desc = 'next hint diagnostic' })
-
-local function toggle_spell_check()
-  ---@diagnostic disable-next-line: param-type-mismatch
-  vim.opt.spell = not (vim.opt.spell:get())
-end
-
-keymap.set('n', '<leader>S', toggle_spell_check, { noremap = true, silent = true, desc = 'toggle spell' })
-
 keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half-page and center' })
 keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half-page and center' })
 keymap.set('n', '<C-f>', '<C-f>zz', { desc = 'move down full-page and center' })
 keymap.set('n', '<C-b>', '<C-b>zz', { desc = 'move up full-page and center' })
-
---- Disabled keymaps [enable at your own risk]
-
--- Automatic management of search highlight
--- XXX: This is not so nice if you use j/k for navigation
--- (you should be using <C-d>/<C-u> and relative line numbers instead ;)
---
--- local auto_hlsearch_nameleader = vim.api.nvim_create_namespace('auto_hlsearch')
--- vim.on_key(function(char)
---   if vim.fn.mode() == 'n' then
---     vim.opt.hlsearch = vim.tbl_contains({ '<CR>', 'n', 'N', '*', '#', '?', '/' }, vim.fn.keytrans(char))
---   end
--- end, auto_hlsearch_nameleader)

@@ -76,9 +76,6 @@ configs.setup {
       },
     },
   },
-  context_commentstring = {
-    enable = true,
-  },
 }
 
 require('treesitter-context').setup {
